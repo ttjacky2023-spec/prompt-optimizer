@@ -1287,12 +1287,17 @@
             document.getElementById('aiTemplateLoading').classList.add('hidden');
             
             // Show selected step
-            document.getElementById(`step${step}`).classList.remove('hidden');
+            if (step === 'loading') {
+                document.getElementById('aiTemplateLoading').classList.remove('hidden');
+            } else {
+                document.getElementById(`step${step}`).classList.remove('hidden');
+            }
             
             // Update indicators
-            document.getElementById('step1Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step >= 1 ? 'bg-violet-500' : 'bg-gray-600'}`;
-            document.getElementById('step2Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step >= 2 ? 'bg-violet-500' : 'bg-gray-600'}`;
-            document.getElementById('step3Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step >= 3 ? 'bg-violet-500' : 'bg-gray-600'}`;
+            const stepNum = step === 'loading' ? 0 : parseInt(step);
+            document.getElementById('step1Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${stepNum >= 1 ? 'bg-violet-500' : 'bg-gray-600'}`;
+            document.getElementById('step2Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${stepNum >= 2 ? 'bg-violet-500' : 'bg-gray-600'}`;
+            document.getElementById('step3Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${stepNum >= 3 ? 'bg-violet-500' : 'bg-gray-600'}`;
         }
         
         function selectExpertRole(role) {
@@ -1331,6 +1336,9 @@
 2. 您希望代码注释的详细程度如何？（确定注释规范）`;
 
             try {
+                console.log('Sending request to:', config.endpoint);
+                console.log('Using model:', config.model);
+                
                 const response = await fetch(config.endpoint, {
                     method: 'POST',
                     headers: {
@@ -1348,26 +1356,40 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', errorText);
                     throw new Error(`API 请求失败: ${response.status}`);
                 }
 
                 const data = await response.json();
-                const questionsText = data.choices[0]?.message?.content || '';
+                console.log('API Response:', data);
                 
-                // Parse questions
-                const questions = questionsText.split('\n').filter(q => q.trim() && /^\d+\./.test(q.trim()));
+                const questionsText = data.choices?.[0]?.message?.content || '';
+                console.log('Questions text:', questionsText);
+                
+                // Parse questions - support both numbered and non-numbered formats
+                let questions = [];
+                if (questionsText) {
+                    const lines = questionsText.split('\n').filter(q => q.trim());
+                    questions = lines.filter(q => /^\d+[\.\)]/.test(q.trim()));
+                    
+                    // If no numbered questions found, try to use all non-empty lines
+                    if (questions.length === 0 && lines.length > 0) {
+                        questions = lines.slice(0, 5); // Take up to 5 lines
+                    }
+                }
+                
+                console.log('Parsed questions:', questions);
                 
                 if (questions.length === 0) {
-                    // Fallback questions
-                    aiTemplateConversation = [
-                        { question: '您希望这个模板主要用于什么场景？', answer: '' },
-                        { question: '您对这个专家角色有什么特殊要求？', answer: '' },
-                        { question: '您希望输出的内容包含哪些要素？', answer: '' }
-                    ];
+                    // Fallback questions based on role
+                    aiTemplateConversation = generateFallbackQuestions(role);
                 } else {
                     aiTemplateConversation = questions.map(q => ({
-                        question: q.replace(/^\d+\.\s*/, '').trim(),
+                        question: q.replace(/^\d+[\.\)]\s*/, '').trim(),
                         answer: ''
                     }));
                 }
@@ -1377,8 +1399,46 @@
                 
             } catch (error) {
                 console.error('Error generating questions:', error);
-                showToast('生成问题失败，请重试', 'error');
-                showAiTemplateStep(1);
+                showToast('生成问题失败，使用默认问题', 'error');
+                
+                // Use fallback questions on error
+                aiTemplateConversation = generateFallbackQuestions(role);
+                renderAiQuestions();
+                showAiTemplateStep(2);
+            }
+        }
+        
+        function generateFallbackQuestions(role) {
+            const roleLower = role.toLowerCase();
+            
+            if (roleLower.includes('代码') || roleLower.includes('开发') || roleLower.includes('程序')) {
+                return [
+                    { question: '您主要使用什么编程语言或框架？（了解技术栈）', answer: '' },
+                    { question: '您希望代码注释的详细程度如何？（确定注释规范）', answer: '' },
+                    { question: '需要包含错误处理和边界情况吗？（确定代码健壮性要求）', answer: '' },
+                    { question: '您希望代码遵循什么编码规范？（确定代码风格）', answer: '' }
+                ];
+            } else if (roleLower.includes('写作') || roleLower.includes('文案') || roleLower.includes('编辑')) {
+                return [
+                    { question: '您主要写什么类型的内容？（了解写作领域）', answer: '' },
+                    { question: '目标读者群体是什么？（确定语言风格）', answer: '' },
+                    { question: '您希望文章的字数范围是多少？（确定内容长度）', answer: '' },
+                    { question: '需要包含特定的关键词或SEO优化吗？（确定优化要求）', answer: '' }
+                ];
+            } else if (roleLower.includes('数据') || roleLower.includes('分析')) {
+                return [
+                    { question: '您主要分析什么类型的数据？（了解数据领域）', answer: '' },
+                    { question: '您希望分析结果包含哪些可视化图表？（确定输出格式）', answer: '' },
+                    { question: '需要包含数据清洗和预处理步骤吗？（确定分析深度）', answer: '' },
+                    { question: '您希望获得什么样的洞察和建议？（确定分析目标）', answer: '' }
+                ];
+            } else {
+                return [
+                    { question: `作为${role}，您主要处理什么类型的任务？（了解工作场景）`, answer: '' },
+                    { question: '您希望输出内容包含哪些关键要素？（确定输出结构）', answer: '' },
+                    { question: '有什么特殊的约束条件或要求吗？（确定限制条件）', answer: '' },
+                    { question: '目标受众或使用者是谁？（确定内容定位）', answer: '' }
+                ];
             }
         }
         
@@ -1447,6 +1507,8 @@
 请直接返回模板内容，不要添加解释或其他内容。`;
 
             try {
+                console.log('Generating template for role:', currentExpertRole);
+                
                 const response = await fetch(config.endpoint, {
                     method: 'POST',
                     headers: {
@@ -1464,12 +1526,23 @@
                     })
                 });
 
+                console.log('Template generation response status:', response.status);
+
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', errorText);
                     throw new Error(`API 请求失败: ${response.status}`);
                 }
 
                 const data = await response.json();
-                const templateContent = data.choices[0]?.message?.content || '';
+                console.log('Template generation response:', data);
+                
+                let templateContent = data.choices?.[0]?.message?.content || '';
+                
+                // If API returns empty content, use fallback
+                if (!templateContent.trim()) {
+                    templateContent = generateFallbackTemplate(currentExpertRole);
+                }
                 
                 // Generate template name based on role
                 const templateName = currentExpertRole + '助手';
@@ -1496,8 +1569,111 @@
                 
             } catch (error) {
                 console.error('Error generating template:', error);
-                showToast('生成模板失败，请重试', 'error');
-                showAiTemplateStep(2);
+                showToast('API 调用失败，使用默认模板', 'error');
+                
+                // Use fallback template
+                const templateContent = generateFallbackTemplate(currentExpertRole);
+                const templateName = currentExpertRole + '助手';
+                
+                document.getElementById('generatedTemplateName').value = templateName;
+                document.getElementById('generatedTemplateContent').value = templateContent;
+                
+                // Auto-select tag
+                const roleLower = currentExpertRole.toLowerCase();
+                let tag = 'purple';
+                if (roleLower.includes('代码') || roleLower.includes('开发') || roleLower.includes('程序')) {
+                    tag = 'blue';
+                } else if (roleLower.includes('写作') || roleLower.includes('文案') || roleLower.includes('编辑')) {
+                    tag = 'green';
+                } else if (roleLower.includes('数据') || roleLower.includes('分析')) {
+                    tag = 'yellow';
+                } else if (roleLower.includes('设计') || roleLower.includes('创意')) {
+                    tag = 'pink';
+                }
+                document.getElementById('generatedTemplateTag').value = tag;
+                
+                showAiTemplateStep(3);
+            }
+        }
+        
+        function generateFallbackTemplate(role) {
+            const roleLower = role.toLowerCase();
+            
+            if (roleLower.includes('代码') || roleLower.includes('开发') || roleLower.includes('程序')) {
+                return `作为${role}，请帮我完成以下任务：
+
+任务描述：
+[请详细描述您需要实现的功能]
+
+技术要求：
+- 编程语言/框架：[填写使用的技术栈]
+- 代码规范：[填写代码风格要求]
+- 注释要求：[填写注释详细程度]
+
+输出要求：
+1. 提供完整的代码实现
+2. 包含必要的注释说明
+3. 处理边界情况和错误
+4. 代码简洁高效，易于维护`;
+            } else if (roleLower.includes('写作') || roleLower.includes('文案') || roleLower.includes('编辑')) {
+                return `作为${role}，请帮我撰写以下内容：
+
+主题：
+[填写文章主题]
+
+文章类型：
+[填写文章类型，如：技术博客、产品介绍、新闻稿等]
+
+目标读者：
+[描述目标读者群体]
+
+写作要求：
+1. 结构清晰，逻辑连贯
+2. 语言流畅，易于理解
+3. 字数要求：[填写字数范围]
+4. 风格要求：[填写风格要求，如：专业、轻松、正式等]
+
+特殊要求：
+[填写其他特殊要求，如：关键词、SEO优化等]`;
+            } else if (roleLower.includes('数据') || roleLower.includes('分析')) {
+                return `作为${role}，请帮我分析以下数据：
+
+数据描述：
+[描述数据的来源和内容]
+
+分析目标：
+[说明希望通过分析得到什么结论]
+
+分析要求：
+1. 数据清洗和预处理
+2. 描述性统计分析
+3. 趋势和模式识别
+4. 异常值检测
+
+输出要求：
+1. 分析结果总结
+2. 可视化图表建议
+3.  actionable 的建议
+4. 风险评估（如适用）`;
+            } else {
+                return `作为${role}，请帮我完成以下任务：
+
+任务背景：
+[描述任务的背景和目标]
+
+具体要求：
+1. [填写具体要求1]
+2. [填写具体要求2]
+3. [填写具体要求3]
+
+约束条件：
+[列出任何限制或特殊要求]
+
+期望输出：
+[描述期望得到的结果格式和内容]
+
+其他说明：
+[补充其他需要说明的信息]`;
             }
         }
         
