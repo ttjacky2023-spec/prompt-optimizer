@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt优化器 - AI智能提示词优化工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-gradient:active {
+            transform: translateY(0);
+        }
+        
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+        }
+        
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .history-item {
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        .copy-btn.copied {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.7);
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-white overflow-x-hidden">
+    <!-- Background particles -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative z-10 container mx-auto px-4 py-8 min-h-screen">
+        <!-- Header -->
+        <header class="text-center mb-10 slide-in">
+            <div class="inline-flex items-center gap-3 mb-4">
+                <div class="relative">
+                    <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <div class="absolute inset-0 w-12 h-12 bg-violet-500 rounded-xl pulse-ring"></div>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent glow-text">
+                    Prompt优化器
+                </h1>
+            </div>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                利用 AI 技术智能优化您的提示词，让每一次交互都更加精准高效
+            </p>
+        </header>
+
+        <div class="grid lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            <!-- Main Input Section -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Input Card -->
+                <div class="glass-card rounded-2xl p-6 slide-in" style="animation-delay: 0.1s;">
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="text-lg font-semibold text-violet-300 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            原始 Prompt
+                        </label>
+                        <span class="text-xs text-gray-500 bg-gray-800/50 px-3 py-1 rounded-full" id="charCount">0 字符</span>
+                    </div>
+                    <textarea 
+                        id="promptInput" 
+                        class="w-full h-48 bg-gray-900/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-500 resize-none focus:outline-none input-glow transition-all"
+                        placeholder="在此输入您需要优化的 Prompt...&#10;&#10;例如：&#10;帮我写一篇关于人工智能的文章&#10;&#10;或者：&#10;解释什么是机器学习"
+                    ></textarea>
+                    
+                    <!-- Quick Templates -->
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="text-sm text-gray-500">快速模板：</span>
+                        <button onclick="insertTemplate('coding')" class="text-xs bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full hover:bg-blue-500/30 transition">💻 代码助手</button>
+                        <button onclick="insertTemplate('writing')" class="text-xs bg-green-500/20 text-green-300 px-3 py-1 rounded-full hover:bg-green-500/30 transition">✍️ 写作助手</button>
+                        <button onclick="insertTemplate('analysis')" class="text-xs bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full hover:bg-yellow-500/30 transition">📊 数据分析</button>
+                        <button onclick="insertTemplate('creative')" class="text-xs bg-pink-500/20 text-pink-300 px-3 py-1 rounded-full hover:bg-pink-500/30 transition">🎨 创意生成</button>
+                    </div>
+
+                    <button 
+                        id="optimizeBtn"
+                        onclick="optimizePrompt()"
+                        class="w-full mt-6 btn-gradient text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-3"
+                    >
+                        <svg id="btnIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span id="btnText">开始优化</span>
+                        <div id="loadingSpinner" class="loading-spinner w-5 h-5 hidden"></div>
+                    </button>
+                </div>
+
+                <!-- Result Card -->
+                <div id="resultCard" class="glass-card rounded-2xl p-6 hidden slide-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="text-lg font-semibold text-green-300 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            优化后的 Prompt
+                        </label>
+                        <div class="flex gap-2">
+                            <button onclick="copyResult()" id="copyBtn" class="copy-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/50 text-gray-300 text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                <span id="copyText">复制</span>
+                            </button>
+                            <button onclick="useAsInput()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/30 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                再次优化
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <textarea 
+                            id="resultOutput" 
+                            class="w-full h-48 bg-gray-900/50 border border-green-500/30 rounded-xl p-4 text-gray-200 resize-none focus:outline-none"
+                            readonly
+                        ></textarea>
+                        <div id="typingIndicator" class="absolute bottom-4 right-4 text-violet-400 text-sm hidden">
+                            <span class="typing-cursor">AI 正在优化中</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Optimization Tips -->
+                    <div id="optimizationTips" class="mt-4 p-4 bg-violet-500/10 rounded-xl border border-violet-500/20 hidden">
+                        <h4 class="text-violet-300 font-semibold mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            优化说明
+                        </h4>
+                        <ul class="text-sm text-gray-400 space-y-1" id="tipsList">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-2xl p-6 sticky top-6 slide-in" style="animation-delay: 0.2s;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-violet-300 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            历史记录
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <button onclick="clearApiToken()" class="text-xs text-yellow-400 hover:text-yellow-300 transition flex items-center gap-1" title="清除保存的 GitHub Token">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                                重置Token
+                            </button>
+                            <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 transition flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                清空
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="historyList" class="space-y-3 max-h-[500px] overflow-y-auto">
+                        <div class="text-center text-gray-500 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <p class="text-sm">暂无历史记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-12 text-gray-500 text-sm">
+            <p>Powered by GitHub Models API • 本地存储保护您的隐私</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-gray-800 border border-violet-500/30 rounded-xl px-6 py-4 flex items-center gap-3 shadow-2xl">
+            <div id="toastIcon" class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <span id="toastMessage" class="text-gray-200">操作成功</span>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_ENDPOINT = 'https://models.github.ai/inference/v1/chat/completions';
+        const MODEL = 'gpt-4o';
+        
+        // Get API token from localStorage or prompt user
+        function getApiToken() {
+            let token = localStorage.getItem('github_api_token');
+            if (!token) {
+                token = prompt('请输入您的 GitHub Personal Access Token (用于调用 GitHub Models API):\n\n获取方式:\n1. 访问 https://github.com/settings/tokens\n2. 点击 "Generate new token (classic)"\n3. 勾选 "read:packages" 权限\n4. 生成并复制 token');
+                if (token) {
+                    localStorage.setItem('github_api_token', token);
+                }
+            }
+            return token;
+        }
+        
+        // Clear saved token
+        function clearApiToken() {
+            localStorage.removeItem('github_api_token');
+            showToast('已清除保存的 Token', 'success');
+        }
+        
+        // DOM Elements
+        const promptInput = document.getElementById('promptInput');
+        const resultOutput = document.getElementById('resultOutput');
+        const resultCard = document.getElementById('resultCard');
+        const optimizeBtn = document.getElementById('optimizeBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const charCount = document.getElementById('charCount');
+        const historyList = document.getElementById('historyList');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyText = document.getElementById('copyText');
+        const toast = document.getElementById('toast');
+
+        // Templates
+        const templates = {
+            coding: '请帮我编写一个 [编程语言] 函数，实现 [功能描述]。要求：\n1. 代码简洁高效\n2. 包含必要的注释\n3. 处理边界情况',
+            writing: '请帮我撰写一篇关于 [主题] 的 [文章类型]。要求：\n1. 结构清晰，逻辑连贯\n2. 语言流畅自然\n3. 适合 [目标读者] 阅读',
+            analysis: '请分析以下数据/信息：\n[数据内容]\n\n要求：\n1. 提取关键洞察\n2. 提供可视化建议\n3. 给出 actionable 的建议',
+            creative: '请发挥创意，帮我设计/构思 [创意内容]。要求：\n1. 独特新颖\n2. 具有可行性\n3. 考虑 [特定约束条件]'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+            promptInput.addEventListener('input', updateCharCount);
+        });
+
+        // Update character count
+        function updateCharCount() {
+            const count = promptInput.value.length;
+            charCount.textContent = `${count} 字符`;
+        }
+
+        // Insert template
+        function insertTemplate(type) {
+            promptInput.value = templates[type];
+            promptInput.focus();
+            updateCharCount();
+            showToast('模板已插入', 'info');
+        }
+
+        // Optimize prompt using GitHub API
+        async function optimizePrompt() {
+            const originalPrompt = promptInput.value.trim();
+            
+            if (!originalPrompt) {
+                showToast('请输入需要优化的 Prompt', 'error');
+                promptInput.focus();
+                return;
+            }
+            
+            // Get API token
+            const API_TOKEN = getApiToken();
+            if (!API_TOKEN) {
+                showToast('需要提供 GitHub Token 才能使用优化功能', 'error');
+                setLoading(false);
+                return;
+            }
+
+            // Show loading state
+            setLoading(true);
+            resultCard.classList.remove('hidden');
+            resultOutput.value = '';
+            
+            const systemPrompt = `你是一位专业的 Prompt 优化专家。你的任务是优化用户提供的 Prompt，使其更加清晰、具体、有效。
+
+优化原则：
+1. 明确角色：为 AI 设定具体的角色和背景
+2. 具体任务：清晰描述需要完成的具体任务
+3. 输出格式：指定期望的输出格式和结构
+4. 约束条件：列出任何限制或特殊要求
+5. 示例说明：必要时提供示例
+
+请直接返回优化后的 Prompt，不要添加解释或其他内容。优化后的 Prompt 应该：
+- 保持原意
+- 更加具体和可操作
+- 结构清晰
+- 易于理解和执行`;
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: `请优化以下 Prompt：\n\n${originalPrompt}` }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || `API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const optimizedPrompt = data.choices[0]?.message?.content || '';
+                
+                // Typewriter effect
+                await typeWriter(optimizedPrompt);
+                
+                // Save to history
+                saveToHistory(originalPrompt, optimizedPrompt);
+                
+                showToast('优化完成！', 'success');
+                
+            } catch (error) {
+                console.error('Optimization error:', error);
+                resultOutput.value = `优化失败：${error.message}\n\n请检查网络连接或稍后重试。`;
+                showToast('优化失败，请重试', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Typewriter effect
+        async function typeWriter(text) {
+            resultOutput.value = '';
+            const chars = text.split('');
+            
+            for (let i = 0; i < chars.length; i++) {
+                resultOutput.value += chars[i];
+                resultOutput.scrollTop = resultOutput.scrollHeight;
+                
+                // Adjust typing speed based on character type
+                const delay = chars[i] === '\n' ? 50 : 
+                              '。！？'.includes(chars[i]) ? 100 : 
+                              Math.random() * 15 + 5;
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            if (loading) {
+                btnText.textContent = '优化中...';
+                btnIcon.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+                optimizeBtn.disabled = true;
+                optimizeBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            } else {
+                btnText.textContent = '开始优化';
+                btnIcon.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                optimizeBtn.disabled = false;
+                optimizeBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        // Copy result to clipboard
+        async function copyResult() {
+            const text = resultOutput.value;
+            if (!text) return;
+            
+            try {
+                await navigator.clipboard.writeText(text);
+                copyBtn.classList.add('copied');
+                copyText.textContent = '已复制';
+                
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyText.textContent = '复制';
+                }, 2000);
+                
+                showToast('已复制到剪贴板', 'success');
+            } catch (err) {
+                showToast('复制失败，请手动复制', 'error');
+            }
+        }
+
+        // Use result as new input
+        function useAsInput() {
+            const result = resultOutput.value;
+            if (result) {
+                promptInput.value = result;
+                updateCharCount();
+                resultCard.classList.add('hidden');
+                showToast('已填入输入框', 'info');
+                promptInput.focus();
+            }
+        }
+
+        // Save to history
+        function saveToHistory(original, optimized) {
+            let history = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+            
+            const item = {
+                id: Date.now(),
+                original: original.substring(0, 100) + (original.length > 100 ? '...' : ''),
+                fullOriginal: original,
+                optimized: optimized,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Add to beginning, limit to 20 items
+            history.unshift(item);
+            if (history.length > 20) {
+                history = history.slice(0, 20);
+            }
+            
+            localStorage.setItem('promptHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        // Load history from localStorage
+        function loadHistory() {
+            renderHistory();
+        }
+
+        // Render history list
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <p class="text-sm">暂无历史记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            historyList.innerHTML = history.map(item => {
+                const date = new Date(item.timestamp);
+                const timeStr = date.toLocaleString('zh-CN', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                return `
+                    <div class="history-item bg-gray-800/30 rounded-xl p-4 cursor-pointer" onclick="loadHistoryItem(${item.id})">
+                        <div class="flex items-start justify-between gap-2">
+                            <p class="text-sm text-gray-300 line-clamp-2 flex-1">${escapeHtml(item.original)}</p>
+                            <span class="text-xs text-gray-500 whitespace-nowrap">${timeStr}</span>
+                        </div>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded">已优化</span>
+                            <span class="text-xs text-gray-500">${item.optimized.length} 字符</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load history item
+        function loadHistoryItem(id) {
+            const history = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+            const item = history.find(h => h.id === id);
+            
+            if (item) {
+                promptInput.value = item.fullOriginal;
+                resultOutput.value = item.optimized;
+                resultCard.classList.remove('hidden');
+                updateCharCount();
+                showToast('已加载历史记录', 'info');
+            }
+        }
+
+        // Clear history
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                localStorage.removeItem('promptHistory');
+                renderHistory();
+                showToast('历史记录已清空', 'info');
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            
+            // Set icon based on type
+            if (type === 'error') {
+                toastIcon.className = 'w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center';
+                toastIcon.innerHTML = '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            } else if (type === 'info') {
+                toastIcon.className = 'w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center';
+                toastIcon.innerHTML = '<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+            } else {
+                toastIcon.className = 'w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center';
+                toastIcon.innerHTML = '<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+            }
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to optimize
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                optimizePrompt();
+            }
+        });
+    </script>
+</body>
+</html>
