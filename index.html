@@ -480,13 +480,31 @@
                         <span class="w-2 h-2 rounded-full bg-green-400"></span>
                         Kimi API Key
                     </label>
-                    <input 
-                        type="password" 
-                        id="kimiApiKey" 
-                        placeholder="输入您的 Kimi API Key"
-                        class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
-                    >
-                    <p class="text-xs text-gray-500 mt-1">获取地址：https://platform.moonshot.cn</p>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="kimiApiKey" 
+                            placeholder="输入您的 Kimi API Key（以 sk- 开头）"
+                            class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
+                        >
+                        <button 
+                            onclick="toggleApiKeyVisibility('kimiApiKey', this)" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
+                            title="显示/隐藏"
+                        >
+                            <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <p class="text-xs text-gray-500">获取地址：https://platform.moonshot.cn</p>
+                        <p class="text-xs text-gray-500" id="kimiKeyLength"></p>
+                    </div>
                 </div>
                 
                 <!-- GitHub API -->
@@ -495,13 +513,31 @@
                         <span class="w-2 h-2 rounded-full bg-blue-400"></span>
                         GitHub Token
                     </label>
-                    <input 
-                        type="password" 
-                        id="githubApiKey" 
-                        placeholder="输入您的 GitHub Personal Access Token"
-                        class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                    >
-                    <p class="text-xs text-gray-500 mt-1">获取地址：https://github.com/settings/tokens</p>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="githubApiKey" 
+                            placeholder="输入您的 GitHub Personal Access Token"
+                            class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                        >
+                        <button 
+                            onclick="toggleApiKeyVisibility('githubApiKey', this)" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
+                            title="显示/隐藏"
+                        >
+                            <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <p class="text-xs text-gray-500">获取地址：https://github.com/settings/tokens</p>
+                        <p class="text-xs text-gray-500" id="githubKeyLength"></p>
+                    </div>
                 </div>
                 
                 <!-- Buttons -->
@@ -773,6 +809,13 @@
             // Load saved keys
             document.getElementById('kimiApiKey').value = localStorage.getItem('kimi_api_key') || '';
             document.getElementById('githubApiKey').value = localStorage.getItem('github_api_key') || '';
+            
+            // Update length display
+            updateKeyLengthDisplay();
+            
+            // Add input listeners
+            document.getElementById('kimiApiKey').addEventListener('input', updateKeyLengthDisplay);
+            document.getElementById('githubApiKey').addEventListener('input', updateKeyLengthDisplay);
         }
 
         function closeApiSettingsModal() {
@@ -781,26 +824,42 @@
             modal.classList.remove('flex');
         }
 
+        function toggleApiKeyVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const eyeOpen = btn.querySelector('.eye-open');
+            const eyeClosed = btn.querySelector('.eye-closed');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                input.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        }
+        
+        function updateKeyLengthDisplay() {
+            const kimiKey = document.getElementById('kimiApiKey').value;
+            const githubKey = document.getElementById('githubApiKey').value;
+            
+            document.getElementById('kimiKeyLength').textContent = kimiKey ? `${kimiKey.length} 字符` : '';
+            document.getElementById('githubKeyLength').textContent = githubKey ? `${githubKey.length} 字符` : '';
+        }
+        
         function saveApiSettings() {
             const kimiKey = document.getElementById('kimiApiKey').value.trim();
             const githubKey = document.getElementById('githubApiKey').value.trim();
             
-            // Validate and save Kimi API Key
+            // Save Kimi API Key (no length validation)
             if (kimiKey) {
-                if (kimiKey.length < 20) {
-                    showToast('Kimi API Key 格式不正确，请检查', 'error');
-                    return;
-                }
                 localStorage.setItem('kimi_api_key', kimiKey);
                 console.log('Kimi API Key saved, length:', kimiKey.length);
             }
             
-            // Validate and save GitHub Token
+            // Save GitHub Token (no length validation)
             if (githubKey) {
-                if (githubKey.length < 20) {
-                    showToast('GitHub Token 格式不正确，请检查', 'error');
-                    return;
-                }
                 localStorage.setItem('github_api_key', githubKey);
                 console.log('GitHub Token saved, length:', githubKey.length);
             }
@@ -850,7 +909,13 @@
             }
             
             resultDiv.className = 'mt-4 p-3 rounded-lg text-sm bg-blue-500/20 border border-blue-500/50 text-blue-400';
-            resultDiv.innerHTML = '🔄 正在测试连接...';
+            resultDiv.innerHTML = `🔄 正在测试 ${provider} 连接...<br><small>Key 长度: ${apiKey.length} 字符</small>`;
+            
+            console.log(`Testing ${provider} connection...`);
+            console.log(`API Endpoint: ${config.endpoint}`);
+            console.log(`API Model: ${config.model}`);
+            console.log(`Key length: ${apiKey.length}`);
+            console.log(`Key prefix: ${apiKey.substring(0, 10)}...`);
             
             try {
                 const response = await fetch(config.endpoint, {
@@ -868,27 +933,47 @@
                     })
                 });
                 
+                console.log(`Response status: ${response.status}`);
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Response data:', data);
+                    
                     if (data.choices && data.choices[0]) {
                         resultDiv.className = 'mt-4 p-3 rounded-lg text-sm bg-green-500/20 border border-green-500/50 text-green-400';
-                        resultDiv.innerHTML = `✅ ${provider} 连接成功！API Key 有效。`;
+                        resultDiv.innerHTML = `✅ ${provider} 连接成功！API Key 有效。<br><small>Key 长度: ${apiKey.length} 字符</small>`;
                     } else {
                         resultDiv.className = 'mt-4 p-3 rounded-lg text-sm bg-yellow-500/20 border border-yellow-500/50 text-yellow-400';
-                        resultDiv.innerHTML = `⚠️ 连接成功但返回数据异常，请检查模型名称。`;
+                        resultDiv.innerHTML = `⚠️ 连接成功但返回数据异常，请检查模型名称。<br><small>Key 长度: ${apiKey.length} 字符</small>`;
                     }
                 } else {
-                    const errorData = await response.json().catch(() => ({}));
-                    const errorMsg = errorData.error?.message || `HTTP ${response.status}`;
+                    let errorMsg = `HTTP ${response.status}`;
+                    let errorDetail = '';
+                    
+                    try {
+                        const errorData = await response.json();
+                        console.error('Error response:', errorData);
+                        errorMsg = errorData.error?.message || errorData.message || errorMsg;
+                        errorDetail = JSON.stringify(errorData.error || errorData, null, 2);
+                    } catch (e) {
+                        const errorText = await response.text();
+                        console.error('Error text:', errorText);
+                        errorDetail = errorText;
+                    }
                     
                     resultDiv.className = 'mt-4 p-3 rounded-lg text-sm bg-red-500/20 border border-red-500/50 text-red-400';
-                    resultDiv.innerHTML = `❌ 连接失败：${errorMsg}<br><br>
+                    resultDiv.innerHTML = `❌ 连接失败<br><br>
+                    <strong>错误信息：</strong>${errorMsg}<br>
+                    <strong>Key 长度：</strong>${apiKey.length} 字符<br>
+                    <strong>Key 前缀：</strong>${apiKey.substring(0, 15)}...<br><br>
                     <strong>排查建议：</strong><br>
-                    1. 检查 API Key 是否正确（不要包含空格）<br>
-                    2. 确认 API Key 未过期<br>
-                    3. 确认有访问权限`;
+                    1. 点击输入框右侧的眼睛图标，确认 Key 完整显示<br>
+                    2. 检查 Key 是否包含多余空格<br>
+                    3. 确认 Key 未过期<br>
+                    4. 确认账户有可用额度`;
                 }
             } catch (error) {
+                console.error('Network error:', error);
                 resultDiv.className = 'mt-4 p-3 rounded-lg text-sm bg-red-500/20 border border-red-500/50 text-red-400';
                 resultDiv.innerHTML = `❌ 网络错误：${error.message}<br><br>请检查网络连接。`;
             }
