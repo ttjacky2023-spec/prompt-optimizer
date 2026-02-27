@@ -1016,6 +1016,13 @@
             try {
                 const config = CONFIG[currentApiProvider];
                 
+                console.log('Using API provider:', currentApiProvider);
+                console.log('API Endpoint:', config.endpoint);
+                console.log('API Model:', config.model);
+                console.log('API Key exists:', !!apiKey);
+                console.log('API Key length:', apiKey.length);
+                console.log('API Key first 10 chars:', apiKey.substring(0, 10) + '...');
+                
                 const response = await fetch(config.endpoint, {
                     method: 'POST',
                     headers: {
@@ -1033,13 +1040,38 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error?.message || `API 请求失败: ${response.status}`);
+                    let errorMessage = `API 请求失败: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        console.error('API Error Response:', errorData);
+                        errorMessage = errorData.error?.message || errorData.message || errorMessage;
+                        
+                        // Provide more helpful error messages
+                        if (response.status === 401) {
+                            if (currentApiProvider === 'kimi') {
+                                errorMessage += '\n\nKimi API Key 可能已过期或无效。请访问 https://platform.moonshot.cn 重新获取。';
+                            } else {
+                                errorMessage += '\n\nGitHub Token 可能已过期或无效。请访问 https://github.com/settings/tokens 重新生成。';
+                            }
+                        }
+                    } catch (e) {
+                        const errorText = await response.text();
+                        console.error('API Error Text:', errorText);
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();
-                const optimizedPrompt = data.choices[0]?.message?.content || '';
+                console.log('API Response:', data);
+                
+                const optimizedPrompt = data.choices?.[0]?.message?.content || '';
+                
+                if (!optimizedPrompt) {
+                    throw new Error('API 返回了空内容');
+                }
                 
                 // Typewriter effect
                 await typeWriter(optimizedPrompt);
@@ -1051,7 +1083,7 @@
                 
             } catch (error) {
                 console.error('Optimization error:', error);
-                resultOutput.value = `优化失败：${error.message}\n\n请检查：\n1. API Key 是否正确\n2. 网络连接是否正常\n3. 稍后重试`;
+                resultOutput.value = `优化失败：${error.message}\n\n请检查：\n1. API Key 是否正确（当前使用：${CONFIG[currentApiProvider].name}）\n2. API Key 是否已过期\n3. 网络连接是否正常\n4. 稍后重试\n\n如果问题持续，请尝试切换 API 提供商或重新配置 API Key。`;
                 showToast('优化失败，请重试', 'error');
             } finally {
                 setLoading(false);
