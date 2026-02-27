@@ -484,7 +484,7 @@
                         <input 
                             type="password" 
                             id="kimiApiKey" 
-                            placeholder="输入您的 Kimi API Key（以 sk- 开头）"
+                            placeholder="输入您的 Kimi Chat API Key（以 sk- 开头，不是 sk-kimi-）"
                             class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
                         >
                         <button 
@@ -502,8 +502,12 @@
                         </button>
                     </div>
                     <div class="flex items-center justify-between mt-1">
-                        <p class="text-xs text-gray-500">获取地址：https://platform.moonshot.cn</p>
+                        <p class="text-xs text-gray-500">获取地址：https://platform.moonshot.cn → API Key 管理 → 新建（类型选择&quot;聊天&quot;）</p>
                         <p class="text-xs text-gray-500" id="kimiKeyLength"></p>
+                    </div>
+                    <div id="kimiKeyWarning" class="hidden mt-2 p-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg text-xs text-yellow-400">
+                        ⚠️ 检测到您使用的是 <strong>Code API Key</strong>（sk-kimi- 开头），这不是正确的 Key。<br>
+                        请使用 <strong>Chat API Key</strong>（sk- 开头，不带 kimi-）
                     </div>
                 </div>
                 
@@ -846,6 +850,14 @@
             
             document.getElementById('kimiKeyLength').textContent = kimiKey ? `${kimiKey.length} 字符` : '';
             document.getElementById('githubKeyLength').textContent = githubKey ? `${githubKey.length} 字符` : '';
+            
+            // Check for Code API Key
+            const warningDiv = document.getElementById('kimiKeyWarning');
+            if (kimiKey && kimiKey.startsWith('sk-kimi-')) {
+                warningDiv.classList.remove('hidden');
+            } else {
+                warningDiv.classList.add('hidden');
+            }
         }
         
         function saveApiSettings() {
@@ -898,6 +910,22 @@
                 apiKey = kimiKey;
                 provider = 'Kimi AI';
                 config = CONFIG.kimi;
+                
+                // Check for Code API Key
+                if (apiKey.startsWith('sk-kimi-')) {
+                    resultDiv.className = 'mt-4 p-3 rounded-lg text-sm bg-red-500/20 border border-red-500/50 text-red-400';
+                    resultDiv.innerHTML = `❌ <strong>使用了错误的 API Key 类型</strong><br><br>
+                    您使用的是 <strong>Kimi Code API Key</strong>（以 sk-kimi- 开头）<br>
+                    本工具需要 <strong>Kimi Chat API Key</strong>（以 sk- 开头，不带 kimi-）<br><br>
+                    <strong>解决方法：</strong><br>
+                    1. 访问 https://platform.moonshot.cn<br>
+                    2. 进入「控制台」→「API Key 管理」<br>
+                    3. 点击「新建 API Key」<br>
+                    4. <strong>类型选择「聊天」</strong>（不是「代码」）<br>
+                    5. 复制新的 Key（以 sk- 开头）<br>
+                    6. 粘贴到本页面保存`;
+                    return;
+                }
             } else if (currentApiProvider === 'github' && githubKey) {
                 apiKey = githubKey;
                 provider = 'GitHub Models';
@@ -1165,6 +1193,29 @@
             if (!apiKey) {
                 showToast(`请先配置 ${CONFIG[currentApiProvider].name} 的 API Key`, 'error');
                 openApiSettingsModal();
+                return;
+            }
+            
+            // Check for Kimi Code API Key
+            if (currentApiProvider === 'kimi' && apiKey.startsWith('sk-kimi-')) {
+                resultCard.classList.remove('hidden');
+                resultOutput.value = `❌ 使用了错误的 API Key 类型
+
+您使用的是 Kimi Code API Key（以 sk-kimi- 开头）
+本工具需要 Kimi Chat API Key（以 sk- 开头，不带 kimi-）
+
+解决方法：
+1. 访问 https://platform.moonshot.cn
+2. 进入「控制台」→「API Key 管理」
+3. 点击「新建 API Key」
+4. 类型选择「聊天」（不是「代码」）
+5. 复制新的 Key（以 sk- 开头）
+6. 粘贴到本页面保存
+
+两种 Key 的区别：
+• Code API Key (sk-kimi-)：用于代码补全、代码生成
+• Chat API Key (sk-)：用于对话、文本生成、Prompt 优化`;
+                showToast('API Key 类型错误', 'error');
                 return;
             }
 
