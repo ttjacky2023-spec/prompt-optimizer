@@ -415,7 +415,15 @@
             
             <!-- Add New Template Form -->
             <div class="mb-6 p-4 bg-gray-800/50 rounded-xl">
-                <h3 class="text-sm font-semibold text-gray-300 mb-3">添加新模板</h3>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-300">添加新模板</h3>
+                    <button onclick="openAiTemplateGenerator()" class="text-xs bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        AI生成模板
+                    </button>
+                </div>
                 <div class="space-y-3">
                     <input 
                         type="text" 
@@ -504,6 +512,157 @@
                     <button onclick="clearAllApiSettings()" class="px-6 py-3 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition">
                         清除全部
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Template Generator Modal -->
+    <div id="aiTemplateModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-violet-300 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    AI 生成模板
+                </h2>
+                <button onclick="closeAiTemplateModal()" class="text-gray-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Progress Steps -->
+            <div class="flex items-center justify-center mb-6">
+                <div class="flex items-center gap-2">
+                    <div id="step1Indicator" class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-sm font-semibold">1</div>
+                    <div class="w-12 h-0.5 bg-gray-600"></div>
+                    <div id="step2Indicator" class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold">2</div>
+                    <div class="w-12 h-0.5 bg-gray-600"></div>
+                    <div id="step3Indicator" class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold">3</div>
+                </div>
+            </div>
+            
+            <!-- Step 1: Input Expert Role -->
+            <div id="step1" class="space-y-4">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-white mb-2">输入专家角色</h3>
+                    <p class="text-gray-400 text-sm">告诉 AI 您需要什么类型的专家模板</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <input 
+                        type="text" 
+                        id="expertRoleInput" 
+                        placeholder="例如：前端开发专家、产品经理、营销文案师..."
+                        class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
+                    >
+                    
+                    <div class="flex gap-2">
+                        <button onclick="generateTemplateQuestions()" class="flex-1 btn-gradient py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            下一步
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Role Suggestions -->
+                <div class="mt-4">
+                    <p class="text-xs text-gray-500 mb-2">快速选择：</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="selectExpertRole('前端开发专家')" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">前端开发专家</button>
+                        <button onclick="selectExpertRole('产品经理')" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">产品经理</button>
+                        <button onclick="selectExpertRole('营销文案师')" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">营销文案师</button>
+                        <button onclick="selectExpertRole('数据分析师')" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">数据分析师</button>
+                        <button onclick="selectExpertRole('UI/UX设计师')" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">UI/UX设计师</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2: Answer Questions -->
+            <div id="step2" class="space-y-4 hidden">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-white mb-2">回答 AI 的问题</h3>
+                    <p class="text-gray-400 text-sm">AI 正在了解您的需求，请回答以下问题</p>
+                </div>
+                
+                <div id="aiQuestionsContainer" class="space-y-4 max-h-[400px] overflow-y-auto">
+                    <!-- Questions will be loaded here -->
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="backToStep1()" class="px-6 py-3 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 transition">
+                        上一步
+                    </button>
+                    <button onclick="generateTemplateContent()" class="flex-1 btn-gradient py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        生成模板
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 3: Generated Template -->
+            <div id="step3" class="space-y-4 hidden">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-white mb-2">模板已生成</h3>
+                    <p class="text-gray-400 text-sm">AI 已为您生成专属模板</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm text-gray-400 mb-1 block">模板名称</label>
+                        <input 
+                            type="text" 
+                            id="generatedTemplateName" 
+                            class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-violet-500"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm text-gray-400 mb-1 block">模板内容</label>
+                        <textarea 
+                            id="generatedTemplateContent" 
+                            rows="8"
+                            class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-violet-500 resize-none"
+                        ></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm text-gray-400 mb-1 block">标签颜色</label>
+                        <select id="generatedTemplateTag" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-violet-500">
+                            <option value="blue">🔵 蓝色 - 代码相关</option>
+                            <option value="green">🟢 绿色 - 写作相关</option>
+                            <option value="yellow">🟡 黄色 - 分析相关</option>
+                            <option value="pink">🩷 粉色 - 创意相关</option>
+                            <option value="purple">🟣 紫色 - 其他</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="backToStep2()" class="px-6 py-3 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 transition">
+                        上一步
+                    </button>
+                    <button onclick="saveGeneratedTemplate()" class="flex-1 btn-gradient py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        保存模板
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="aiTemplateLoading" class="hidden py-12">
+                <div class="flex flex-col items-center">
+                    <div class="loading-spinner w-12 h-12 mb-4"></div>
+                    <p class="text-gray-400">AI 正在思考中...</p>
                 </div>
             </div>
         </div>
@@ -1087,6 +1246,283 @@
             return div.innerHTML;
         }
 
+        // ==================== AI Template Generator ====================
+        let aiTemplateConversation = [];
+        let currentExpertRole = '';
+        
+        function openAiTemplateGenerator() {
+            // Check if API is configured
+            const apiKey = currentApiProvider === 'kimi' 
+                ? localStorage.getItem('kimi_api_key')
+                : localStorage.getItem('github_api_key');
+            
+            if (!apiKey) {
+                showToast(`请先配置 ${CONFIG[currentApiProvider].name} 的 API Key`, 'error');
+                openApiSettingsModal();
+                return;
+            }
+            
+            const modal = document.getElementById('aiTemplateModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Reset to step 1
+            showAiTemplateStep(1);
+            document.getElementById('expertRoleInput').value = '';
+            aiTemplateConversation = [];
+            currentExpertRole = '';
+        }
+        
+        function closeAiTemplateModal() {
+            const modal = document.getElementById('aiTemplateModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        
+        function showAiTemplateStep(step) {
+            // Hide all steps
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('aiTemplateLoading').classList.add('hidden');
+            
+            // Show selected step
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            
+            // Update indicators
+            document.getElementById('step1Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step >= 1 ? 'bg-violet-500' : 'bg-gray-600'}`;
+            document.getElementById('step2Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step >= 2 ? 'bg-violet-500' : 'bg-gray-600'}`;
+            document.getElementById('step3Indicator').className = `w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step >= 3 ? 'bg-violet-500' : 'bg-gray-600'}`;
+        }
+        
+        function selectExpertRole(role) {
+            document.getElementById('expertRoleInput').value = role;
+        }
+        
+        async function generateTemplateQuestions() {
+            const role = document.getElementById('expertRoleInput').value.trim();
+            
+            if (!role) {
+                showToast('请输入专家角色', 'error');
+                return;
+            }
+            
+            currentExpertRole = role;
+            
+            // Show loading
+            showAiTemplateStep('loading');
+            
+            const apiKey = currentApiProvider === 'kimi' 
+                ? localStorage.getItem('kimi_api_key')
+                : localStorage.getItem('github_api_key');
+            
+            const config = CONFIG[currentApiProvider];
+            
+            const systemPrompt = `你是一位专业的 Prompt 模板设计专家。你的任务是根据用户提供的专家角色，生成3-5个关键问题来了解用户的需求，以便为这个专家角色创建一个高质量的 Prompt 模板。
+
+要求：
+1. 问题应该简洁明了
+2. 问题应该覆盖该专家角色的核心工作场景
+3. 每个问题后面用括号标注该问题的目的
+4. 只返回问题列表，每行一个问题，不要添加其他内容
+
+格式示例：
+1. 您主要使用什么编程语言？（了解技术栈）
+2. 您希望代码注释的详细程度如何？（确定注释规范）`;
+
+            try {
+                const response = await fetch(config.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: config.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: `请为"${role}"这个角色生成3-5个关键问题，用于了解用户的具体需求。` }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1000
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const questionsText = data.choices[0]?.message?.content || '';
+                
+                // Parse questions
+                const questions = questionsText.split('\n').filter(q => q.trim() && /^\d+\./.test(q.trim()));
+                
+                if (questions.length === 0) {
+                    // Fallback questions
+                    aiTemplateConversation = [
+                        { question: '您希望这个模板主要用于什么场景？', answer: '' },
+                        { question: '您对这个专家角色有什么特殊要求？', answer: '' },
+                        { question: '您希望输出的内容包含哪些要素？', answer: '' }
+                    ];
+                } else {
+                    aiTemplateConversation = questions.map(q => ({
+                        question: q.replace(/^\d+\.\s*/, '').trim(),
+                        answer: ''
+                    }));
+                }
+                
+                renderAiQuestions();
+                showAiTemplateStep(2);
+                
+            } catch (error) {
+                console.error('Error generating questions:', error);
+                showToast('生成问题失败，请重试', 'error');
+                showAiTemplateStep(1);
+            }
+        }
+        
+        function renderAiQuestions() {
+            const container = document.getElementById('aiQuestionsContainer');
+            container.innerHTML = aiTemplateConversation.map((item, index) => `
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <label class="text-sm text-violet-300 mb-2 block">
+                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-500/30 text-xs mr-2">${index + 1}</span>
+                        ${escapeHtml(item.question)}
+                    </label>
+                    <textarea 
+                        id="aiAnswer_${index}" 
+                        placeholder="请输入您的回答..."
+                        rows="2"
+                        class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 resize-none text-sm"
+                        onchange="updateAiAnswer(${index}, this.value)"
+                    >${escapeHtml(item.answer)}</textarea>
+                </div>
+            `).join('');
+        }
+        
+        function updateAiAnswer(index, value) {
+            aiTemplateConversation[index].answer = value;
+        }
+        
+        function backToStep1() {
+            showAiTemplateStep(1);
+        }
+        
+        function backToStep2() {
+            showAiTemplateStep(2);
+        }
+        
+        async function generateTemplateContent() {
+            // Check if all questions are answered
+            const unanswered = aiTemplateConversation.filter(item => !item.answer.trim());
+            if (unanswered.length > 0) {
+                showToast(`还有 ${unanswered.length} 个问题未回答`, 'error');
+                return;
+            }
+            
+            // Show loading
+            showAiTemplateStep('loading');
+            
+            const apiKey = currentApiProvider === 'kimi' 
+                ? localStorage.getItem('kimi_api_key')
+                : localStorage.getItem('github_api_key');
+            
+            const config = CONFIG[currentApiProvider];
+            
+            // Build Q&A context
+            const qaContext = aiTemplateConversation.map((item, index) => 
+                `问题${index + 1}：${item.question}\n回答：${item.answer}`
+            ).join('\n\n');
+            
+            const systemPrompt = `你是一位专业的 Prompt 模板设计专家。根据用户提供的专家角色和问答信息，创建一个高质量的 Prompt 模板。
+
+模板要求：
+1. 模板应该包含该专家角色的核心工作流程
+2. 使用 [占位符] 表示需要用户填写的内容
+3. 模板结构清晰，层次分明
+4. 包含具体的输出要求和约束条件
+5. 语言简洁专业
+
+请直接返回模板内容，不要添加解释或其他内容。`;
+
+            try {
+                const response = await fetch(config.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: config.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: `专家角色：${currentExpertRole}\n\n${qaContext}\n\n请根据以上信息，创建一个专业的 Prompt 模板。` }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const templateContent = data.choices[0]?.message?.content || '';
+                
+                // Generate template name based on role
+                const templateName = currentExpertRole + '助手';
+                
+                // Fill in step 3
+                document.getElementById('generatedTemplateName').value = templateName;
+                document.getElementById('generatedTemplateContent').value = templateContent;
+                
+                // Auto-select tag based on role keywords
+                const roleLower = currentExpertRole.toLowerCase();
+                let tag = 'purple';
+                if (roleLower.includes('代码') || roleLower.includes('开发') || roleLower.includes('程序')) {
+                    tag = 'blue';
+                } else if (roleLower.includes('写作') || roleLower.includes('文案') || roleLower.includes('编辑')) {
+                    tag = 'green';
+                } else if (roleLower.includes('数据') || roleLower.includes('分析')) {
+                    tag = 'yellow';
+                } else if (roleLower.includes('设计') || roleLower.includes('创意')) {
+                    tag = 'pink';
+                }
+                document.getElementById('generatedTemplateTag').value = tag;
+                
+                showAiTemplateStep(3);
+                
+            } catch (error) {
+                console.error('Error generating template:', error);
+                showToast('生成模板失败，请重试', 'error');
+                showAiTemplateStep(2);
+            }
+        }
+        
+        function saveGeneratedTemplate() {
+            const name = document.getElementById('generatedTemplateName').value.trim();
+            const content = document.getElementById('generatedTemplateContent').value.trim();
+            const tag = document.getElementById('generatedTemplateTag').value;
+            
+            if (!name || !content) {
+                showToast('模板名称和内容不能为空', 'error');
+                return;
+            }
+            
+            const key = 'custom_' + Date.now();
+            templates[key] = { name, content, tag };
+            
+            saveTemplates();
+            renderTemplates();
+            renderSidebarTemplates();
+            renderModalTemplates();
+            
+            closeAiTemplateModal();
+            showToast('AI 生成的模板已保存', 'success');
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -1095,6 +1531,7 @@
             if (e.key === 'Escape') {
                 closeTemplateModal();
                 closeApiSettingsModal();
+                closeAiTemplateModal();
             }
         });
     </script>
